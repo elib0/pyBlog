@@ -1,0 +1,70 @@
+{% extends 'index.html' %}
+
+{% block wrapedcontent %}
+<div class="single-post">
+{% if especific_post %}
+{% for p in especific_post %}
+	<header>
+		<h3>{{p.title}}</h3>
+		<h4>fecha de plublicacion: {{p.date}}</h4>
+        <h4>creado por: {{p.author}}</h4>
+	</header>
+	<div class="post-content">
+		{{p.content}}
+	</div>
+
+    Comentarios:
+    <ul class="comments">
+    {% if post_comments %}
+        {% for c in post_comments %}
+        <li class="sigle-comment">{{c.text}}</li>
+        {% endfor %}
+    {% else %}
+        <li>No hay comentarios en el post</li>
+    {% endif %}
+    </ul>
+
+    {# Formulario de comentar noticia #}
+    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+    <form action="{% url 'comment_post' p.id %}" method="post" id="frmAddComment">
+        {% csrf_token %}
+        <textarea name="comment" id="comment" cols="60" rows="10" placeholder="Comenta aqui sobre esta noticia" required></textarea><br>
+        <input type="submit" value="Commentar" />
+    </form>
+    {% endfor %}
+{% else %}
+    <h1>Error al intentar ver el post</h1>
+{% endif %}
+<a href="/">volver</a>
+</div>
+{% endblock%}
+{% block javascript %}
+<script>
+    $(function() {
+        $('#frmAddComment').submit(function(){
+            var frm = $(this);
+            // console.log(frm.serialize());
+
+            //Enviamos el ajax
+            $.ajax({
+                type: frm.attr('method'),
+                url: frm.attr('action'),
+                data: frm.serialize(),
+                success: function (data) {
+                    if (data.success==1) {
+                        var classComment = $('ul.comments li:first-child').attr('class');
+                        if( classComment == 'sigle-comment' ){
+                            $('ul.comments').prepend('<li class="sigle-comment">'+$('#comment').val()+'</li>');
+                        }else{
+                            $('ul.comments li:first-child').html( $('#comment').val() ).addClass('sigle-comment');
+                        }
+                        $('#comment').val('');
+                    };
+                    $('.system-messages').html(data.message).fadeIn(1000).fadeOut(4000);
+                }
+            });
+            return false;
+        });
+    });
+</script>
+{% endblock %}
